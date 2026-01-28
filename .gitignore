@@ -17,3 +17,9 @@ logs
 .DS_Store
 .fleet
 .idea
+
+/app/generated/prisma
+
+/generated/prisma
+
+/generated/prisma

@@ -1,4 +1,4 @@
-import db from "~~/server/util/db"
+import prisma from "~~/server/util/db"
 
 
 export default defineEventHandler(async (event)=>{
@@ -10,9 +10,22 @@ export default defineEventHandler(async (event)=>{
     if (!name || !email || !role){
         return {status: 400 , message:"โปรดใส่ข้อมูลให้ครบ"}
     }
-    const [results] = await db.query("SELECT * FROM User WHERE User_id = ?;",[id])
-    if (results.length > 0){
-        await db.query("UPDATE User SET User_name = ?, User_email = ?, User_role = ? WHERE User_id = ?;",[name,email,role,id])
+    const results = await prisma.user.findFirst({
+        where: {
+            User_id: Number(id)
+        }
+    })
+    if (results){
+        await prisma.user.update({
+            where: {
+                User_id: parseInt(id)
+            },
+            data: {
+                User_name: name,
+                User_email: email,
+                User_role: role
+            }
+        })
         return {status: 200,  message: "สำเร็จ"}
     }else{
         return {status: 404,  message: "ไม่พบข้อมูล"}

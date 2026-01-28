@@ -6,8 +6,15 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+    networks:
+      - front-end
+      - back-end
+    volumes:
+      - app_data:/app/.data
+
   db:
     image: mysql:latest
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: 12345678
       MYSQL_DATABASE: weather
@@ -15,5 +22,47 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+    networks:
+      - back-end
+  
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    user: "0:0"
+    restart: always
+    ports:
+      - "1883:1883"
+    volumes:
+      - mosquitto_config:/mosquitto/config
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    networks:
+      - iot
+    
+  nodered:
+    image: nodered/node-red:latest
+    container_name: nodered
+    restart: always
+    ports:
+      - "1880:1880"
+    volumes:
+      - nodered_data:/data
+    networks:
+      - iot
+      - back-end
+  
 volumes:
+  app_data:
   db_data:
+  mosquitto_config:
+  mosquitto_data:
+  mosquitto_log:
+  nodered_data:
+
+networks:
+  front-end:
+    driver: bridge
+  back-end:
+    driver: bridge
+  iot:
+    driver: bridge

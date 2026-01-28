@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model SensorData {
+  SD_id     Int    @id @default(autoincrement())
+  SD_data   Json
+  SD_create String @unique(map: "uq_day") @db.VarChar(100)
+}
+
+model Rain {
+  Rain_id      Int    @id @default(autoincrement())
+  Rain_persent Float  @default(0) @db.Float
+  Rain_zone    Int
+  Rain_by      Int
+  Rain_create  String @db.VarChar(10)
+  user         User   @relation(fields: [Rain_by], references: [User_id])
+  zone         Zone   @relation(fields: [Rain_zone], references: [Zone_id])
+
+  @@index([Rain_by], map: "Rain_Rain_by_fkey")
+  @@index([Rain_zone], map: "Rain_Rain_zone_fkey")
+}
+
+model Zone {
+  Zone_id   Int    @id @default(autoincrement())
+  Zone_name String @db.VarChar(100)
+  rains     Rain[]
+}
+
+model User {
+  User_id       Int            @id @default(autoincrement())
+  User_name     String         @db.VarChar(100)
+  User_email    String         @db.VarChar(100)
+  User_password String         @db.VarChar(100)
+  User_role     User_User_role @default(user)
+  User_avatar   String?        @db.VarChar(255)
+  rains         Rain[]
+}
+
+enum User_User_role {
+  user
+  staff
+  admin
+}

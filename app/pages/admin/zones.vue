@@ -1,83 +1,150 @@
-<script setup >
-    useHead({
-        title:"Admin"
+<script setup>
+import { h,resolveComponent } from 'vue'
+
+useHead({ title: 'Admin' })
+
+const UButton = resolveComponent('UButton')
+const UFieldGroup = resolveComponent('UFieldGroup')
+
+const zones = ref([])
+const zone = ref('')
+const error = ref(null)
+
+const columns = [
+  {
+    accessorKey: 'id',
+    header: '#'
+  },
+  {
+    accessorKey: 'name',
+    header: 'ชื่อเขต'
+  },
+  {
+    accessorKey: 'id',
+    header: '',
+    cell: ({ row }) => h(UFieldGroup,[
+        h(UButton,
+          {
+            size: 'xs',
+            color: 'primary',
+            variant: 'outline',
+            class: "hover:cursor-pointer",
+            onClick: () => edit(row.getValue("id"))
+          },'แก้ไข'
+        ),
+        h(UButton,
+          {
+            size: 'xs',
+            color: 'error',
+            variant: 'outline',
+            class: "hover:cursor-pointer",
+            onClick: () => deletes(row.getValue("id"))
+          },'ลบ'
+        )
+        ]
+    )
+  }
+]
+
+if (import.meta.client) {
+  const token = localStorage.getItem('token')
+  const { data } = await $fetch('/api/zone', {
+    headers: { Authentication: 'App ' + token }
+  })
+  zones.value = data
+}
+
+async function add() {
+  const token = localStorage.getItem('token')
+  const { status, message } = await $fetch('/api/admin/zone', {
+    method: 'POST',
+    body: { name: zone.value },
+    headers: { Authentication: 'App ' + token }
+  })
+
+  if (status !== 200) {
+    error.value = message
+  } else {
+    zone.value = ''
+    const { data } = await $fetch('/api/zone', {
+      headers: { Authentication: 'App ' + token }
     })
-    const zones = ref("")
-    const zone = ref(null)
-    const error = ref(null)
-    if(import.meta.client){
-        const token = localStorage.getItem("token")
-        const {data:datas} = await $fetch("/api/zone",{
-            headers:{
-                "Authentication": "App "+token
-            }
-        })
-        zones.value = datas
-    }
-    async function deletes(event) {
-        const id = event.target.id
-        const token = localStorage.getItem("token")
-        const {message,status} = await $fetch("/api/admin/zone/"+id,{
-        method:"DELETE",
-        headers:{
-            "Authentication": "App "+token
-            }
-        })
-        if (status!=200) error.value = message;else location.reload()
-    }
+    zones.value = data
+  }
+}
 
-    async function edit(event) {
-        const id = event.target.id
-        location.assign("/admin/zone/edit/"+id)
-    }
+function edit(id) {
+  location.assign('/admin/zone/edit/' + id)
+}
 
-    async function add(event) {
-        const token = localStorage.getItem("token")
-        const {message,status} = await $fetch("/api/admin/zone",{
-        method:"POST",
-        body:{
-            name:zone.value
-        },
-        headers:{
-            "Authentication": "App "+token
-            }
-        })
-        if (status!=200) error.value = message;else location.reload()
-    }
+async function deletes(id) {
+  const token = localStorage.getItem('token')
+  const { status, message } = await $fetch('/api/admin/zone/' + id, {
+    method: 'DELETE',
+    headers: { Authentication: 'App ' + token }
+  })
+
+  if (status !== 200) {
+    error.value = message
+  } else {
+    const { data } = await $fetch('/api/zone', {
+      headers: { Authentication: 'App ' + token }
+    })
+    zones.value = data
+  }
+}
 </script>
 
 <template>
-    <div class=" max-w-7xl mx-auto flex  items-center gap-6 mt-6 px-4">
-            <main class="flex-1">
-            <div class="bg-white rounded-lg shadow border p-6">
-                <h3 class="font-semibold txet-sm text-black mb-2">รายชื่อเขต</h3>
-                <h3 v-if="error" class=" mb-2bg-red-200 text-red-500 text-center border w-full p-4 mb-2 font-semibold rounded">{{ error }}</h3>
-                พื้นที่: <input v-model="zone" type="text" name="zone" placeholder="ชื่อเขต" class="w-1/2 p-3 border rounded" required>
-                <button type="button" v-on:click="add" class="bg-green-500 text-white border p-2 ml-2 font-semibold rounded" >เพิ่มเขต</button>
-                <div class="overflow-x-auto mt-4">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-100">
-                            <tr class="text-gray-700 text-sm">
-                                <th class="px-4 py-3 text-left">#</th>
-                                <th class="px-4 py-3 text-left">ชื่อเขต</th>
-                                <th class="px-4 py-3 text-left"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <tr class="hover:bg-gray-100" v-for="data in zones">
-                                <td class="px-4 py-4">{{data.id}}</td>
-                                <td class="px-4 py-4">{{data.name}}</td>
-                                <td class="px-4 py-4">
-                                    <div class="inline-flex rounded-base shadow-xs -space-x-px" role="group">
-                                        <button type="button" v-on:click="edit" :id="data.id" class="bg-blue-500 text-white border p-1 ml-2 font-semibold rounded" >แก้ไข</button>
-                                        <button type="button" v-on:click="deletes" :id="data.id" class="bg-red-500 text-white border p-1 ml-2 font-semibold rounded" >ลบ</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            </main>
+  <div class="max-w-7xl mx-auto mt-6 px-4">
+    <main>
+      <UCard>
+        <template #header>
+          <h3 class="text-sm font-semibold">
+            รายชื่อเขต
+          </h3>
+        </template>
+
+        <UAlert
+          v-if="error"
+          title="ผิดพลาด" :description="error"
+          color="error"
+          variant="soft"
+          class="mb-4"
+        />
+
+        <div class="space-y-4">
+          <!-- controls -->
+          <div class="flex flex-wrap items-center gap-2">
+            <UFormField
+              label="พื้นที่"
+              orientation="horizontal"
+            >
+              <UInput
+                color="neutral"
+                v-model="zone"
+                placeholder="ชื่อเขต"
+                class="w-48"
+              />
+            </UFormField>
+
+            <UButton
+              color="neutral"
+              variant="solid"
+              class="hover:cursor-pointer"
+              @click="add"
+            >
+              เพิ่มเขต
+            </UButton>
+          </div>
+
+          <!-- table -->
+          <UTable
+            :data="zones"
+            :columns="columns"
+          />
         </div>
+      </UCard>
+    </main>
+  </div>
 </template>

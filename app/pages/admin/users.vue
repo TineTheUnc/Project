@@ -1,72 +1,126 @@
-<script setup >
-    useHead({
-        title:"Admin"
-    })
-    const users =ref("")
-    if(import.meta.client){
-        const token = localStorage.getItem("token")
-        const {data:datas} = await $fetch("/api/admin/users",{
-            headers:{
-                "Authentication": "App "+token
-            }
-        })
-        users.value = datas
-    }
-    async function deletes(event) {
-        const id = event.target.id
-        const token = localStorage.getItem("token")
-        const {message,status} = await $fetch("/api/admin/user/"+id,{
-        method:"DELETE",
-        headers:{
-            "Authentication": "App "+token
-            }
-        })
-        if (status!=200) alert(message);else location.reload()
-    }
+<script setup>
+import { h, resolveComponent } from 'vue'
 
-    async function edit(event) {
-        const id = event.target.id
-        location.assign("/admin/user/edit/"+id)
+useHead({ title: 'Admin' })
+
+const UButton = resolveComponent('UButton')
+const UFieldGroup = resolveComponent('UFieldGroup')
+
+const users = ref([])
+const error = ref(null)
+
+const columns = [
+  {
+    accessorKey: 'id',
+    header: '#'
+  },
+  {
+    accessorKey: 'name',
+    header: 'ชื่อ'
+  },
+  {
+    accessorKey: 'email',
+    header: 'อีเมล'
+  },
+  {
+    accessorKey: 'role',
+    header: 'บทบาท'
+  },
+  {
+    accessorKey: 'actions',
+    header: '',
+    cell: ({ row }) => {
+      const user = row.original
+      const disabled = user.role === 'admin'
+
+      return h(
+        UFieldGroup,
+        {},
+        [
+          h(
+            UButton,
+            {
+              size: 'xs',
+              color: disabled ? 'neutral' : 'primary',
+              variant: 'outline',
+              disabled,
+              class: "hover:cursor-pointer",
+              onClick: () => edit(user.id)
+            },
+            'แก้ไข'
+          ),
+          h(
+            UButton,
+            {
+              size: 'xs',
+              color: disabled ? 'neutral' : 'error',
+              variant: 'outline',
+              disabled,
+              class: "hover:cursor-pointer",
+              onClick: () => deletes(user.id)
+            },
+            'ลบ'
+          )
+        ]
+      )
     }
+  }
+]
+
+if (import.meta.client) {
+  const token = localStorage.getItem('token')
+  const { data } = await $fetch('/api/admin/users', {
+    headers: { Authentication: 'App ' + token }
+  })
+  users.value = data
+}
+
+function edit(id) {
+  location.assign('/admin/user/edit/' + id)
+}
+
+async function deletes(id) {
+  const token = localStorage.getItem('token')
+  const { status, message } = await $fetch('/api/admin/user/' + id, {
+    method: 'DELETE',
+    headers: { Authentication: 'App ' + token }
+  })
+
+  if (status !== 200) {
+    error.value = message
+  } else {
+    const { data } = await $fetch('/api/admin/users', {
+      headers: { Authentication: 'App ' + token }
+    })
+    users.value = data
+  }
+}
 </script>
 
 <template>
-    <div class=" max-w-7xl mx-auto flex  items-center gap-6 mt-6 px-4">
-            <main class="flex-1">
-            <div class="bg-white rounded-lg shadow border p-6">
-                <h3 class="font-semibold txet-sm text-black">รายชื่อ</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-100">
-                            <tr class="text-gray-700 text-sm">
-                                <th class="px-4 py-3 text-left">#</th>
-                                <th class="px-4 py-3 text-left">ชื่อ</th>
-                                <th class="px-4 py-3 text-left">email</th>
-                                <th class="px-4 py-3 text-left">บทบาท</th>
-                                <th class="px-4 py-3 text-left"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <tr class="hover:bg-gray-100" v-for="data in users">
-                                <td class="px-4 py-4">{{data.id}}</td>
-                                <td class="px-4 py-4">{{data.name}}</td>
-                                <td class="px-4 py-4">{{data.email}}</td>
-                                <td class="px-4 py-4">{{data.role}}</td>
-                                <td class="px-4 py-4">
-                                    <div v-if="data.role != 'admin'" class="inline-flex rounded-base shadow-xs -space-x-px" role="group">
-                                        <button type="button" v-on:click="edit" :id="data.id" class="bg-blue-500 text-white border p-1 ml-2 font-semibold rounded" >แก้ไข</button>
-                                        <button type="button" v-on:click="deletes" :id="data.id" class="bg-red-500 text-white border p-1 ml-2 font-semibold rounded" >ลบ</button>
-                                    </div>
-                                    <div v-else class="inline-flex rounded-base shadow-xs -space-x-px" role="group">
-                                        <button type="button" v-on:click="edit" :id="data.id" class="bg-gray-300 text-white border p-1 ml-2 font-semibold rounded" disabled>แก้ไข</button>
-                                        <button type="button" v-on:click="deletes" :id="data.id" class="bg-gray-300 text-white border p-1 ml-2 font-semibold rounded" disabled>ลบ</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            </main>
-        </div>
+  <div class="max-w-7xl mx-auto mt-6 px-4">
+    <main>
+      <UCard>
+        <template #header>
+          <h3 class="text-sm font-semibold">
+            รายชื่อผู้ใช้
+          </h3>
+        </template>
+
+        <UAlert
+          v-if="error"
+          title="ผิดพลาด"
+          :description="error"
+          color="error"
+          variant="soft"
+          class="mb-4"
+        />
+
+        <UTable
+          :data="users"
+          :columns="columns"
+        />
+      </UCard>
+    </main>
+  </div>
 </template>

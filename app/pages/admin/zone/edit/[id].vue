@@ -1,52 +1,65 @@
-<script setup >
-    useHead({
-        title:"แก้ไขข้อมูลเขต",
-        bodyAttrs:{
-            class:"bg-gray-150 flex justify-center items-center min-h-screen"
-        }
+<script setup>
+useHead({
+    title: 'แก้ไขข้อมูลเขต',
+    bodyAttrs: {
+        class: 'bg-gray-150 flex justify-center items-center min-h-screen'
+    }
+})
+
+definePageMeta({ layout: 'form' })
+
+const name = ref('')
+const error = ref(null)
+
+if (import.meta.client) {
+    const token = localStorage.getItem('token')
+    const id = useRoute().params.id
+    const { data } = await $fetch('/api/admin/zone/' + id, {
+        headers: { Authentication: 'App ' + token }
     })
-    definePageMeta({ layout: 'form' })
-    const name = ref(null)
-    const error = ref(null)
-    if (import.meta.client){
-        const token = localStorage.getItem("token")
-        const id = useRoute().params.id
-        const {data} = await $fetch("/api/admin/zone/"+id,{
-            method:"GET",
-            headers:{
-                "Authentication": "App "+token
-                }
-            })
-        name.value = data.name
+    name.value = data.name
+}
+
+async function submit() {
+    const token = localStorage.getItem('token')
+    const id = useRoute().params.id
+
+    const { message, status } = await $fetch('/api/admin/zone/' + id, {
+        method: 'PUT',
+        body: { name: name.value },
+        headers: { Authentication: 'App ' + token }
+    })
+
+    if (status !== 200) {
+        error.value = message
+    } else {
+        location.assign('/admin/zones')
     }
-    async function submit(event) {
-        event.preventDefault()
-        const token = localStorage.getItem("token")
-        const id = useRoute().params.id
-        const {message,status} = await $fetch("/api/admin/zone/"+id,{
-            method:"PUT",
-            body:{
-                name:name.value
-            },
-            headers:{
-                "Authentication": "App "+token
-                }
-            })
-        if (status!=200) {
-            error.value = message
-        }else{
-            location.assign("/admin/zones")
-        } 
-    }
+}
 </script>
+
 <template>
-    <div class="bg-white rounded-lg shadow p-6 w-80">
-        <h2 class="font-semibold text-center text-xl  mb-2">แก้ไขข้อมูลเขต</h2>
-        <h3 v-if="error" class="bg-red-200 text-red-500 text-center border w-full p-4 mb-2 font-semibold rounded">{{ error }}</h3>
-        <form v-on:submit="submit" class="space-y-3">
-            <input v-model="name" type="name" name="name" placeholder="ชื่อเขต" class="w-full p-3 border rounded" required>
-            <button type="submit" class="bg-blue-500 text-white border w-full p-3 font-semibold rounded">แก้ไข</button>
-            <NuxtLink to="/admin/zones" class="text-gray-500  w-full font-semibold  flex justify-left text-xs">ย้อนกลับ</NuxtLink>
-        </form>
-    </div>
+    <UCard class="w-80">
+        <template #header>
+            <h2 class="text-center text-lg font-semibold">
+                แก้ไขข้อมูลเขต
+            </h2>
+        </template>
+
+        <UAlert v-if="error" title="ผิดพลาด" :description="error" color="error" variant="soft" class="mb-4" />
+
+        <UForm @submit.prevent="submit" class="space-y-4">
+            <UFormField label="ชื่อเขต" required>
+                <UInput v-model="name" placeholder="ชื่อเขต" autofocus class="w-full" color="neutral" />
+            </UFormField>
+
+            <UButton type="submit" color="primary" block class="hover:cursor-pointer">
+                แก้ไข
+            </UButton>
+
+            <ULink to="/admin/zones" class="block text-xs text-gray-500 text-left">
+                ← ย้อนกลับ
+            </ULink>
+        </UForm>
+    </UCard>
 </template>

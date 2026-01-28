@@ -1,4 +1,4 @@
-import db from "~~/server/util/db"
+import prisma from "~~/server/util/db"
 
 
 export default defineEventHandler(async (event)=>{
@@ -8,10 +8,33 @@ export default defineEventHandler(async (event)=>{
     if (!name){
         return {status: 400 , message:"โปรดใส่ข้อมูลให้ครบ"}
     }
-    const [results] = await db.query("SELECT * FROM Zone WHERE Zone_id = ?;",[id])
-    if (results.length > 0){
-        await db.query("UPDATE Zone SET Zone_name = ? WHERE Zone_id = ?;",[name,id])
-        return {status: 200,  message: "สำเร็จ"}
+    const results = await prisma.zone.findFirst({
+        where: {
+            Zone_id: parseInt(id)
+        }
+    })
+    if (results){
+        const results2 = await prisma.zone.findFirst({
+            where: {
+                Zone_name: name,
+                Zone_id: {
+                    not: parseInt(id)
+                }
+            }
+        })
+        if (results2){
+            return {status: 400, message: "ชื่อเขตซ้ำ"}
+        }else{
+            await prisma.zone.update({
+                where: {
+                    Zone_id: parseInt(id)
+                },
+                data: {
+                    Zone_name: name
+                }
+            })
+            return {status: 200, message: "สำเร็จ"}
+        }
     }else{
         return {status: 404,  message: "ไม่พบข้อมูล"}
     }

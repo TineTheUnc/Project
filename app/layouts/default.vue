@@ -1,7 +1,14 @@
-<script setup>
-    const role = ref(null)
+<script setup lang="ts">
+    import type { NavigationMenuItem } from '@nuxt/ui'
+    const items1 = ref<NavigationMenuItem[]>([])
+    function logout(){
+        localStorage.clear()
+        location.assign("/login")
+    }
+    const login = ref(false)
     if (import.meta.client){
         const token = localStorage.getItem('token')
+        login.value = !!token
         if (token){
             const {data} = await $fetch("/api/user/me",{
             method:"GET",
@@ -11,24 +18,44 @@
             })
             
             if (data){
-                role.value = data.role
+                const role = data.role
+                items1.value.push({
+                    label: "ข้อมูลสภาพอากาศ",
+                    to: "/user/weather",
+                })
+                if (role == 'staff'){
+                    items1.value.push({
+                        label: "จัดการข้อมูลสภาพอากาศ",
+                        to: "/staff/weathers",
+                    })
+                }else if (role == 'admin'){
+                    items1.value.push({
+                        label: "จัดการข้อมูลโซน",
+                        to: "/admin/zones",
+                    })
+                    items1.value.push({
+                        label: "จัดการข้อมูลผู้ใช้",
+                        to: "/admin/users",
+                    })
+                }        
             }
-            console.log(role.value );
         }
-        
-        
     }
 </script>
 
 <template>
-    <Header>
-        <template #page>
-            <NuxtLink to="/" class="font-semibold text-3xl mr-6">Home</NuxtLink>
-            <NuxtLink  v-show="role == 'user' || role == 'staff' || role == 'admin'" to="/user/weather" class="font-semibold text-sm mr-4">ข้อมูลสภาพอากาศ</NuxtLink>
-            <NuxtLink  v-show="role == 'staff'" to="/staff/weathers" class="font-semibold text-sm mr-4">จัดการข้อมูลสภาพอากาศ</NuxtLink>
-            <NuxtLink  v-show="role == 'admin'" to="/admin/zones" class="font-semibold text-sm mr-4">จัดการข้อมูลโซน</NuxtLink>
-            <NuxtLink  v-show="role == 'admin'" to="/admin/users" class="font-semibold text-sm mr-4">จัดการข้อมูลผู้ใช้</NuxtLink>
+    <UHeader title="Home">
+        <UNavigationMenu color="neutral" :items="items1"/>
+        <template #body>
+            <UNavigationMenu color="neutral" :items="items1" orientation="vertical" class="-mx-2.5" />
         </template>
-    </Header>
+        <template #right>
+            <UColorModeButton /> 
+            <UButton class="hover:cursor-pointer" v-if="!login" to="/login" color="neutral" >เข้าสู่ระบบ</UButton>
+            <UButton class="hover:cursor-pointer" v-if="!login" to="/register" color="neutral" >สมัครสมาชิก</UButton>
+            <UButton class="hover:cursor-pointer" v-if="login" to="/user/profile" color="neutral" >โปรไฟล์</UButton>
+            <UButton class="hover:cursor-pointer" v-if="login" v-on:click="logout" color="neutral" >ออกจากระบบ</UButton>
+        </template>
+    </UHeader>
     <slot/>
 </template>

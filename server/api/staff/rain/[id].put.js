@@ -1,4 +1,4 @@
-import db from "~~/server/util/db"
+import prisma from "~~/server/util/db"
 
 
 export default defineEventHandler(async (event)=>{
@@ -6,12 +6,39 @@ export default defineEventHandler(async (event)=>{
     const body = await readBody(event)
     const persent = body.persent
     const zone = body.zone
-    const [results] = await db.query("SELECT * FROM Rain WHERE Rain_id=?;",[id])
-    if (results.length > 0){
-        const data1 = results[0]
-        const [results2] = await db.query("SELECT * FROM Rain WHERE Rain_zone=? AND Rain_create=?;",[zone,data1.Rain_create])
-        if (results2.length == 0 || results2[0].Rain_id == id){
-            await db.query("UPDATE Rain SET Rain_persent=?, Rain_zone=? WHERE Rain_id=?;",[persent,zone,id])
+    const result = await prisma.rain.findFirst({
+        where: {
+            Rain_id: parseInt(id)
+        },
+        select: {
+            Rain_id: true,
+            Rain_persent: true,
+            Rain_zone: true,
+            Rain_by: true,
+            Rain_create: true
+        }
+    })
+    if (result){
+        const data1 = result
+        const result2 = await prisma.rain.findFirst({
+            where: {
+                Rain_zone: zone,
+                Rain_create: data1.Rain_create
+            },
+            select: {
+                Rain_id: true
+            }
+        })
+        if (!result2 || result2.Rain_id == id){
+            await prisma.rain.update({
+                where: {
+                    Rain_id: parseInt(id)
+                },
+                data: {
+                    Rain_persent: parseInt(persent),
+                    Rain_zone: parseInt(zone)
+                }
+            })
             return {status: 200, message: "สำเร็จ"}
         }else{
             return {status: 400, message: "ข้อมูลซ้ำ"}

@@ -1,11 +1,34 @@
-import db from "~~/server/util/db"
+import prisma from "~~/server/util/db"
 
 
 export default defineEventHandler(async (event)=>{
-    const [results] = await db.query("SELECT Rain_id, Rain_persent, z.Zone_name, u.User_name , Rain_create, Rain_by FROM weather.Rain JOIN `Zone` z JOIN `User` u WHERE Rain_zone = z.Zone_id AND Rain_by = u.User_id;",)
-    if (results.length > 0){
-        const datas = results.map((data)=>{return{"id":data.Rain_id,"persent":data.Rain_persent,"by":data.User_name,"zone":data.Zone_name,"create":data.Rain_create}})
-        return {status: 200,  message: "สำเร็จ",data:datas}
+    const result = await prisma.rain.findMany({
+        select: {
+            Rain_id: true,
+            Rain_persent: true,
+            zone: {
+                select: {
+                    Zone_name: true
+                }
+            },
+            user: {
+                select: {
+                    User_name: true
+                }
+            },
+            Rain_create: true
+        },
+        orderBy: {Rain_create: 'desc'}
+    })
+    if (result.length > 0){
+        const data = result.map((r) => ({
+            "id": r.Rain_id,
+            "persent": r.Rain_persent,
+            "by": r.user.User_name,
+            "zone": r.zone.Zone_name,
+            "create": r.Rain_create
+        }))
+        return {status: 200,  message: "สำเร็จ",data:data}
     }else{
         return {status: 404,  message: "ไม่พบข้อมูล"}
     }
