@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const data = body.scores
   
   if (data) {
-    const today = new Date().toISOString().split('T')[0]
+    const today = new Date().getFullYear().toString()
     const results = await prisma.estimate.findMany({
       where: {
         Estimate_staff: parseInt(id),

@@ -30,7 +30,7 @@ const columns = [
     accessorKey: 'id',
     header: '',
     cell: ({ row }) => {
-      const disabled = user.role === 'admin'
+      const disabled = row.getValue("role") === 'admin'
 
       return h(
         UFieldGroup,

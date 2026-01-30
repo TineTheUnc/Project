@@ -5,14 +5,11 @@ useHead({ title: 'Admin' })
 
 const UButton = resolveComponent('UButton')
 
-const users = ref([])
+const estimates = ref([])
 const error = ref(null)
-
+const today = new Date()
+const year = ref(today.getFullYear())
 const columns = [
-  {
-    accessorKey: 'id',
-    header: '#'
-  },
   {
     accessorKey: 'name',
     header: 'ชื่อ'
@@ -32,50 +29,57 @@ const columns = [
       }
       return  star
     }
-  },
-  {
-    accessorKey: 'id',
-    header: '',
-    cell: ({ row }) => {
-
-
-      return h(
-            UButton,
-            {
-              size: 'xs',
-              color: 'primary',
-              variant: 'outline',
-              class: "hover:cursor-pointer",
-              onClick: () => estimate(row.getValue("id"))
-            },
-            'ประเมิน'
-          )
-    }
   }
 ]
 
+const fetchEvaluates = async () => {
+  const token = localStorage.getItem('token')
+  estimates.value = null
+  try {
+    const { data } = await $fetch('/api/admin/evaluates?year='+year.value, {
+    headers: { Authentication: 'App ' + token },
+    method:'GET'
+    })
+    console.log(data);
+    
+    if (data?.length) estimates.value = data
+  } catch (e) {
+    console.error('โหลดไม่สำเร็จ', e)
+  } 
+}
+
+
 if (import.meta.client) {
   const token = localStorage.getItem('token')
-  const { data } = await $fetch('/api/admin/staffs', {
-    headers: { Authentication: 'App ' + token }
+  const { data } = await $fetch('/api/admin/evaluates?year='+year.value, {
+    headers: { Authentication: 'App ' + token },
+    method:'GET'
   })
-  users.value = data
+  estimates.value = data
 }
-
-function estimate(id) {
-  location.assign('/admin/estimate/' + id)
-}
-
+watch(year, fetchEvaluates)
 </script>
 
 <template>
   <div class="max-w-7xl mx-auto mt-6 px-4">
+    <div class="flex justify-center mb-4">
+      <UInput
+      v-model="year"
+      type="number"
+      min="2000"
+      max="2100"
+      placeholder="YYYY"
+      />
+    </div>
     <main>
       <UCard>
         <template #header>
-          <h3 class="text-sm font-semibold">
-            รายชื่อเจ้าหน้าที่
+          <h3 class="text-sm font-semibold mb-2">
+            ประเมิน
           </h3>
+          <UButton v-on:click="navigateTo('/admin/estimate')" class="hover:cursor-pointer" type="submit" color="primary" block>
+            เพิ่ม
+          </UButton>
         </template>
 
         <UAlert
@@ -88,9 +92,14 @@ function estimate(id) {
         />
 
         <UTable
-          :data="users"
+          v-if="estimates"
+          :data="estimates"
           :columns="columns"
         />
+
+        <h2 v-else class="text-center py-10 text-gray-500">
+          ไม่มีข้อมูลในปีเลือก
+        </h2>
       </UCard>
     </main>
   </div>

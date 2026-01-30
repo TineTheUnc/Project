@@ -10,6 +10,8 @@ definePageMeta({ layout: 'form' })
 
 const route = useRoute()
 const error = ref(null)
+const users = ref([])
+const selectedUser = ref(null)
 
 const categories = [
   { key: 'diligence', label: 'ความขยัน' },
@@ -27,10 +29,19 @@ const scores = reactive({
   teamwork: null
 })
 
-async function submit () {
+if (import.meta.client) {
+  const token = localStorage.getItem('token')
+  const { data } = await $fetch('/api/admin/staffs', {
+    headers: { Authentication: 'App ' + token },
+    method:'GET'
+  })
+  console.log(data);
+  
+  users.value = data
+}
+async function submit() {
   error.value = null
 
-  // เช็คให้ครบก่อน (ไม่งั้นข้อมูลมั่ว)
   const notFilled = Object.values(scores).some(v => v === null)
   if (notFilled) {
     error.value = 'กรุณาให้คะแนนครบทุกหมวด'
@@ -40,11 +51,13 @@ async function submit () {
   const token = localStorage.getItem('token')
 
   const { status, message } = await $fetch(
-    '/api/admin/evaluate/' + route.params.id,
+    '/api/admin/evaluate/' + selectedUser.value,
     {
       method: 'POST',
       headers: { Authentication: 'App ' + token },
-      body: { scores }
+      body: { 
+        scores: scores 
+      }
     }
   )
 
@@ -63,42 +76,39 @@ async function submit () {
       </h2>
     </template>
 
-    <UAlert
-      v-if="error"
-      title="ผิดพลาด"
-      :description="error"
-      color="error"
-      variant="soft"
-      class="mb-4"
-    />
+    <UAlert v-if="error" title="ผิดพลาด" :description="error" color="error" variant="soft" class="mb-4" />
 
     <UForm @submit.prevent="submit" class="space-y-5">
-      <div
-        v-for="cat in categories"
-        :key="cat.key"
-        class="space-y-2"
-      >
+      <UFormField label="เจ้าหน้าที่" class=" text-sm text-center font-medium">
+      <USelect
+        v-model="selectedUser"
+        :items="users"
+        valueKey="id" labelKey="name"
+        placeholder="เลือกเจ้าหน้าที่"
+        class="w-full"
+        color="neutral"
+        required
+      />
+    </UFormField>
+    <hr/>
+      <div v-for="cat in categories" :key="cat.key" class="space-y-2">
         <p class="text-sm text-center font-medium">
           {{ cat.label }}
         </p>
-
-        <URadioGroup
-        class="flex items-center justify-center mb-2"
-        orientation="horizontal"
-          v-model="scores[cat.key]"
+        
+        <URadioGroup class="flex items-center justify-center mb-2" orientation="horizontal" v-model="scores[cat.key]"
           :items="[
             { label: 'ปรับปรุง', value: -1 },
             { label: 'พอใช้', value: 0 },
             { label: 'ดีเยี่ยม', value: 1 }
-          ]"
-        />
+          ]" />
       </div>
 
-      <UButton type="submit" color="primary" block>
+      <UButton type="submit" color="primary" class="hover:cursor-pointer" block>
         บันทึกการประเมิน
       </UButton>
 
-      <ULink to="/admin/estimates" class="block text-xs text-gray-500">
+      <ULink to="/admin/estimates" class="block text-xs text-gray-500 hover:cursor-pointer">
         ← ย้อนกลับ
       </ULink>
     </UForm>

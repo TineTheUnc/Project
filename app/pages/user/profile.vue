@@ -16,7 +16,6 @@ if (import.meta.client) {
             Authentication: 'App ' + token
         }
     })
-    console.log(data.avatar);
     
     if (data) {
         user.value = data

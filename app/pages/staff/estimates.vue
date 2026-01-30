@@ -4,7 +4,8 @@ useHead({ title: 'estimates' })
 
 const em = ref([])
 const error = ref(null)
-
+const today = new Date()
+const year = ref(today.getFullYear())
 const columns = [
   {
     accessorKey: 'id',
@@ -63,18 +64,45 @@ const columns = [
   }
 ]
 
+const fetchEvaluates = async () => {
+  const token = localStorage.getItem('token')
+  em.value = null
+  try {
+    const { data } = await $fetch('/api/staff/evaluate?year='+year.value, {
+    headers: { Authentication: 'App ' + token },
+    method: "GET"
+  })
+    
+    if (data?.length) em.value = data
+  } catch (e) {
+    console.error('โหลดไม่สำเร็จ', e)
+  } 
+}
+
+
 if (import.meta.client) {
   const token = localStorage.getItem('token')
-  const { data } = await $fetch('/api/staff/evaluate', {
+  const { data } = await $fetch('/api/staff/evaluate?year='+year.value, {
     headers: { Authentication: 'App ' + token },
     method: "GET"
   })
   em.value = data
 }
+
+watch(year, fetchEvaluates)
 </script>
 
 <template>
   <div class="max-w-7xl mx-auto mt-6 px-4">
+     <div class="flex justify-center mb-4">
+      <UInput
+      v-model="year"
+      type="number"
+      min="2000"
+      max="2100"
+      placeholder="YYYY"
+      />
+    </div>
     <main>
       <UCard>
         <template #header>

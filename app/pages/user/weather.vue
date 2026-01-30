@@ -79,13 +79,8 @@ watch(date, fetchAll)
         
         <!-- date picker -->
         <div class="flex justify-center">
-            <UInput
-          v-model="date"
-          type="date"
-          color="neutral"
-          class="w-48"
-        />
-      </div>
+         <UInput v-model="date" type="date" color="neutral" class="w-48" />
+        </div>
       <!-- sensor snapshot -->
       <div v-if="sensor" class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <UCard>

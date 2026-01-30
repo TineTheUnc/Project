@@ -2,10 +2,12 @@ import prisma from "~~/server/util/db"
 
 
 export default defineEventHandler(async (event)=>{
+  const year = getQuery(event).year
   const userId = parseInt(event.context.user.id)
     const result = await prisma.estimate.findMany({
         where:{
-          Estimate_staff: userId
+          Estimate_staff: userId,
+          Estimate_create: year
         },
         select:{
           Estimate_id: true,

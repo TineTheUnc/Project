@@ -7,13 +7,7 @@ export default defineEventHandler(async (event)=>{
             User_id: true,
             User_name: true,
             User_email: true,
-            User_role: true,
-            estimates:{
-                select:{
-                    Estimate_data: true
-                },
-                orderBy: {Estimate_create: 'desc'}
-            }
+            User_role: true
         },
         where: { User_role: 'staff' }
     })
@@ -22,8 +16,7 @@ export default defineEventHandler(async (event)=>{
             "id": result.User_id,
             "name": result.User_name,
             "email": result.User_email,
-            "role": result.User_role,
-            "estimate": result.estimates.length > 0 ? result.estimates[0].Estimate_data : {"data":0}
+            "role": result.User_role
         }))
         return {status: 200,  message: "สำเร็จ",data:data}
     }else{
