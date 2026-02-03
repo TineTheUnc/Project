@@ -16,6 +16,16 @@ yarn install
 bun install
 ```
 
+## Prisma setup
+
+Setup client for prisma
+
+```bash
+
+npx prisma generate
+
+```
+
 ## Development Server
 
 Start the development server on `http://localhost:3000`:

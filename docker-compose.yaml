@@ -1,4 +1,23 @@
 services:
+
+  db:
+    image: mysql:latest
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: weather
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - back-end
   app:
     build: .
     ports:
@@ -11,20 +30,9 @@ services:
       - back-end
     volumes:
       - app_data:/app/.data
-
-  db:
-    image: mysql:latest
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: 12345678
-      MYSQL_DATABASE: weather
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-    networks:
-      - back-end
-  
+    depends_on:
+      db:
+        condition: service_healthy
   mosquitto:
     image: eclipse-mosquitto:latest
     container_name: mosquitto
